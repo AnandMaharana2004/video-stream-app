@@ -4,6 +4,7 @@ import {
     DeleteMessageCommand,
 } from "@aws-sdk/client-sqs";
 import dotenv from "dotenv";
+import { RunTask } from "../ecs/inex";
 
 dotenv.config();
 
@@ -78,7 +79,7 @@ type S3EventRecord = {
     };
 };
 
-const handleS3Event = (job: any) => {
+const handleS3Event = async (job: any) => {
     if (!job.Records || !Array.isArray(job.Records)) {
         console.log("❌ Not a valid S3 event message.");
         return;
@@ -89,6 +90,7 @@ const handleS3Event = (job: any) => {
         const key = decodeURIComponent(record.s3.object.key.replace(/\+/g, " "));
         console.log(`📦 New video uploaded: s3://${bucket}/${key}`);
         // 👉 Here you can call a function to start transcoding or any other processing
+        await RunTask("fromEcs/outputHLS", key)
     }
 };
 

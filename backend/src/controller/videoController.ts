@@ -26,7 +26,7 @@ export const uploadVideo = async (req: Request, res: Response) => {
     const { fileName, fileSize, fileType } = parseResult.data;
 
     // Optionally: Generate a unique key (e.g., with user id, timestamp)
-    const keyName = `videos/${Date.now()}_${fileName}`;
+    const keyName = `${Date.now()}_${fileName}`;
     
     // Generate pre-signed URL
     const url = await generateUrlForUploadFileOnS3(
