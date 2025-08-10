@@ -5,6 +5,7 @@ import { generateUrlForUploadFileOnS3 } from "@/aws/s3Setup";
 import { User } from "@/models/userModel";
 import { Video } from "@/models/videoModel";
 import { z } from "zod";
+import { connectToDatabase } from "../db/dbConnection";
 
 
 // Validate input
@@ -27,6 +28,7 @@ export async function UploadFileController(fileName: string, fileSize: string, f
   if (!name || !email) throw new Error("Unauthorized");
 
   // check in data base 
+  await connectToDatabase()
   const user = await User.findOne({ email }).select("-password")
   if (!user) {
     throw new Error("Unauthorized User")
@@ -44,9 +46,20 @@ export async function UploadFileController(fileName: string, fileSize: string, f
     title: title || "Now testing time",
     fileName,
     description: description || "",
-
-
+    temporarys3Key: fileKey
   });
 
-  return { presignedUrl };
+  return { presignedUrl, fileKey };
+}
+
+export async function CancelFileUploadingController(key: string) {
+  await connectToDatabase()
+  if (!key) {
+    return false
+    throw Error("Please provide file key (s3 file key)")
+  }
+  await Video.findOneAndDelete({
+    temporarys3Key: key
+  })
+  return true
 }

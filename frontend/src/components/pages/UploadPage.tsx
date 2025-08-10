@@ -1,34 +1,52 @@
-"use client"
+"use client";
 
 import React, { useState, useRef } from 'react';
 import { Upload, Film, Image as ImageIcon, Loader2 } from 'lucide-react';
-import { UploadFileController } from '@/utils/actions/awsActions';
+import { CancelFileUploadingController, UploadFileController } from '@/utils/actions/awsActions';
 
 const UploadPage: React.FC = () => {
-  // State variables, now with explicit TypeScript types
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [videoTitle, setVideoTitle] = useState<string>('');
   const [videoDescription, setVideoDescription] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' | null }>({ text: '', type: null });
+  const [fileKey, setFileKey] = useState<string>('')
 
-  // Refs for file inputs
+  // Popup management states
+  const [showProgressModal, setShowProgressModal] = useState<boolean>(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+
+  // Use a ref to store the XMLHttpRequest instance for cancellation
+  const xhrRequestRef = useRef<XMLHttpRequest | null>(null);
+
   const videoInputRef = useRef<HTMLInputElement>(null);
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
 
-  // Helper function to handle file selection
   const handleFileChange = (file: File | null, setFile: React.Dispatch<React.SetStateAction<File | null>>) => {
     if (file) {
       setFile(file);
     }
   };
 
-  // Handle the form submission and the entire upload process
+  // Function to handle upload cancellation
+  const handleCancelUpload = async () => {
+    if (xhrRequestRef.current) {
+      xhrRequestRef.current.abort();
+      console.log('Upload aborted by user.');
+    }
+    await CancelFileUploadingController(fileKey)
+    setShowProgressModal(false);
+    setIsLoading(false);
+    setUploadProgress(0);
+    setMessage({ text: 'Upload cancelled.', type: 'error' });
+  };
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setIsLoading(true);
     setMessage({ text: '', type: null });
+    setUploadProgress(0);
 
     if (!videoFile) {
       setMessage({ text: 'Please select a video file to upload.', type: 'error' });
@@ -36,29 +54,62 @@ const UploadPage: React.FC = () => {
       return;
     }
 
-    // In a real app, you would make an API call to your backend
-    // to get the pre-signed URL.
-    try {
+    // Show the popup immediately after validation
+    setShowProgressModal(true);
 
-      const { presignedUrl } = await UploadFileController(videoFile.name, videoFile.size.toString(), videoFile.type, videoTitle, videoDescription)
-      // then pass the file buffer data on the presigned url 
-      const result = await fetch(presignedUrl, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': videoFile.type,
-        },
-        body: videoFile,
+    try {
+      const { presignedUrl, fileKey } = await UploadFileController(
+        videoFile.name,
+        videoFile.size.toString(),
+        videoFile.type,
+        videoTitle,
+        videoDescription
+      );
+      setFileKey(fileKey)
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhrRequestRef.current = xhr; // Store the XHR object in a ref
+
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percentCompleted = Math.round((event.loaded * 100) / event.total);
+            setUploadProgress(percentCompleted);
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            setMessage({ text: 'Video uploaded successfully ✅', type: 'success' });
+            resolve();
+          } else {
+            setMessage({ text: 'An error occurred during the upload. Please try again.', type: 'error' });
+            reject(new Error(xhr.statusText));
+          }
+        };
+
+        xhr.onerror = () => {
+          setMessage({ text: 'A network error occurred. Please check your connection.', type: 'error' });
+          reject(new Error('Network error'));
+        };
+
+        xhr.onabort = () => {
+          reject(new Error('Upload aborted'));
+        };
+
+        xhr.open('PUT', presignedUrl, true);
+        xhr.setRequestHeader('Content-Type', videoFile.type);
+        xhr.send(videoFile);
       });
 
-      if (result.ok) {
-        setMessage({ text: "Video uploaded successfluy ✅", type: "success" })
-      }
-
     } catch (error) {
-      console.error('Upload failed:', error);
-      setMessage({ text: 'An error occurred during the upload. Please try again.', type: 'error' });
+      if (error instanceof Error && error.message !== 'Upload aborted') {
+        console.error('Upload failed:', error);
+        setMessage({ text: 'An error occurred during the upload. Please try again.', type: 'error' });
+      }
     } finally {
       setIsLoading(false);
+      setShowProgressModal(false);
+      xhrRequestRef.current = null; // Clean up the ref
     }
   };
 
@@ -69,6 +120,7 @@ const UploadPage: React.FC = () => {
           Upload Your Video
         </h1>
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* ... All your existing form inputs here ... */}
 
           {/* Video Upload Section */}
           <div>
@@ -201,6 +253,36 @@ const UploadPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* --- THE POPUP CODE --- */}
+      {showProgressModal && (
+        <div className="fixed inset-0 bg-transparent bg-opacity-75 flex items-center justify-center z-50 backdrop-blur-sm">
+          <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <Loader2 className="w-8 h-8 text-blue-500 animate-spin mr-3" />
+                <h2 className="text-xl font-bold text-gray-800">Uploading...</h2>
+              </div>
+              <button
+                type="button"
+                className="text-gray-500 hover:text-gray-700"
+                onClick={handleCancelUpload}
+              >
+                Cancel
+              </button>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+              <div
+                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-in-out"
+                style={{ width: `${uploadProgress}%` }}
+              ></div>
+            </div>
+            <p className="text-center text-sm font-medium text-gray-600">
+              {uploadProgress}% Complete
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

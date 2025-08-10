@@ -1,18 +1,18 @@
 import { Document, Schema, Types, model, models } from "mongoose";
 
 export interface IVideo extends Document {
-    author: Types.ObjectId;
-    title: string;
-    description?: string;
-    fileName: string;
-    status: "pending" | "uploading" | "processing" | "completed" | "failed";
-    originalS3Key?: string;
-    permanentS3Key?: string;
-    thumbnailS3Key?: string;
-    views: number;
-    duration?: number;
-    size?: number;
-    isPublished: boolean;
+  author: Types.ObjectId;
+  title: string;
+  description?: string;
+  fileName: string;
+  status: "pending" | "uploading" | "processing" | "completed" | "failed";
+  temporarys3Key?: string;
+  permanentS3Key?: string;
+  thumbnailS3Key?: string;
+  views: number;
+  duration?: number;
+  size?: number;
+  isPublished: boolean;
 }
 
 const videoSchema = new Schema<IVideo>(
@@ -39,8 +39,9 @@ const videoSchema = new Schema<IVideo>(
       required: true,
       default: "pending",
     },
-    originalS3Key: {
+    temporarys3Key: {
       type: String,
+      required: true,
     },
     permanentS3Key: {
       type: String,

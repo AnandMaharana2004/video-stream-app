@@ -45,7 +45,7 @@ export function Navbar() {
   // Links for authorized users
   const navLinks = [
     { href: "/explore", label: "Explore", icon: <Compass className="w-5 h-5 mr-2" /> },
-    { href: "/dash-board", label: "Dashboard", icon: <LayoutDashboard className="w-5 h-5 mr-2" /> },
+    { href: "/upload", label: "Upload", icon: <LayoutDashboard className="w-5 h-5 mr-2" /> },
   ];
 
   const handleSignOut = async () => {
