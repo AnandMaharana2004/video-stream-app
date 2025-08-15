@@ -41,7 +41,6 @@ const videoSchema = new Schema<IVideo>(
     },
     temporarys3Key: {
       type: String,
-      required: true,
     },
     permanentS3Key: {
       type: String,

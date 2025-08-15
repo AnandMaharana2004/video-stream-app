@@ -52,5 +52,6 @@ export const GetObjectFromS3 = async (
         Key: keyName,
     })
     const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 60 * timeDuration })
+    if(!signedUrl) throw Error("Something went wrong while generating the signedUrl")
     return signedUrl
 }

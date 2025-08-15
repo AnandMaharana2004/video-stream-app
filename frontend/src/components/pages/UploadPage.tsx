@@ -58,12 +58,16 @@ const UploadPage: React.FC = () => {
     setShowProgressModal(true);
 
     try {
-      const { presignedUrl, fileKey } = await UploadFileController(
+      if (!videoFile || !thumbnailFile || !videoDescription || !videoTitle) throw Error("please rovide the mendatary detals")
+      const { videoPresignedUrl, thamadilPresignedUrl } = await UploadFileController(
         videoFile.name,
         videoFile.size.toString(),
         videoFile.type,
+        thumbnailFile.name,
+        thumbnailFile?.size.toString(),
+        thumbnailFile?.type,
         videoTitle,
-        videoDescription
+        videoDescription,
       );
       setFileKey(fileKey)
       await new Promise<void>((resolve, reject) => {
@@ -79,8 +83,22 @@ const UploadPage: React.FC = () => {
 
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {
-            setMessage({ text: 'Video uploaded successfully ✅', type: 'success' });
-            resolve();
+            ; (async () => {
+              const result = await fetch(thamadilPresignedUrl, {
+                headers: {
+                  'Content-Type': thumbnailFile.type
+                },
+                method: "PUT",
+                body: thumbnailFile
+              })
+              if (result.ok) {
+                console.log("`thambdil uploade successfulu ✅")
+                resolve();
+                return setMessage({ text: 'Video uploaded successfully ✅', type: 'success' });
+              }
+            })()
+
+
           } else {
             setMessage({ text: 'An error occurred during the upload. Please try again.', type: 'error' });
             reject(new Error(xhr.statusText));
@@ -96,7 +114,7 @@ const UploadPage: React.FC = () => {
           reject(new Error('Upload aborted'));
         };
 
-        xhr.open('PUT', presignedUrl, true);
+        xhr.open('PUT', videoPresignedUrl, true);
         xhr.setRequestHeader('Content-Type', videoFile.type);
         xhr.send(videoFile);
       });
