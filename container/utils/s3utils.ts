@@ -8,6 +8,7 @@ import { createReadStream, createWriteStream } from "fs";
 import { access, constants, readdir, stat, unlink } from "fs/promises"; // For checking file existence and deleting local files
 import path from "path";
 import { Upload } from "@aws-sdk/lib-storage";
+import pLimit from "p-limit";
 
 function s3ClientSetup() {
     const { AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY } = process.env;
@@ -170,23 +171,55 @@ export async function uploadFileToS3(bucketName: string, key: string, filePath: 
     console.log(`✅ Uploaded: ${key}`);
 }
 
-export async function uploadFolderToS3(localFolderPath: string, bucketName: string, s3Folder: string): Promise<void> {
+/*export async function uploadFolderToS3(localFolderPath: string, bucketName: string, s3Folder: string): Promise<void> {
+   async function walk(currentPath: string, currentS3Path: string) {
+       const items = await readdir(currentPath);
+
+       for (const item of items) {
+           const localItemPath = path.join(currentPath, item);
+           const s3ItemPath = path.join(currentS3Path, item).replace(/\\/g, "/"); // Windows compatibility
+           const fileStat = await stat(localItemPath);
+
+           if (fileStat.isDirectory()) {
+               await walk(localItemPath, s3ItemPath); // Recurse into subfolder
+           } else if (fileStat.isFile()) {
+               await uploadFileToS3(bucketName, s3ItemPath, localItemPath);
+           }
+       }
+   }
+
+   await walk(localFolderPath, s3Folder);
+   console.log("✅ All files uploaded recursively.");
+} */
+
+export async function uploadFolderToS3(
+    localFolderPath: string,
+    bucketName: string,
+    s3Folder: string
+): Promise<void> {
+    // const pLimit = await getPLimit()
+    const limit = pLimit(15); // control concurrency (15 uploads at once is usually safe)
+
     async function walk(currentPath: string, currentS3Path: string) {
         const items = await readdir(currentPath);
 
-        for (const item of items) {
+        const tasks = items.map(async (item) => {
             const localItemPath = path.join(currentPath, item);
-            const s3ItemPath = path.join(currentS3Path, item).replace(/\\/g, "/"); // Windows compatibility
+            const s3ItemPath = path.join(currentS3Path, item).replace(/\\/g, "/");
             const fileStat = await stat(localItemPath);
 
             if (fileStat.isDirectory()) {
-                await walk(localItemPath, s3ItemPath); // Recurse into subfolder
+                return walk(localItemPath, s3ItemPath);
             } else if (fileStat.isFile()) {
-                await uploadFileToS3(bucketName, s3ItemPath, localItemPath);
+                return limit(() =>
+                    uploadFileToS3(bucketName, s3ItemPath, localItemPath)
+                );
             }
-        }
+        });
+
+        await Promise.all(tasks);
     }
 
     await walk(localFolderPath, s3Folder);
-    console.log("✅ All files uploaded recursively.");
+    console.log("✅ All files uploaded recursively with concurrency.");
 }
