@@ -1,82 +1,107 @@
-/**
- * connect to database 
- * find the particular document throw (VIdeo_Id)
- * update the status (from )
- */
 
-import { MongoClient, ObjectId } from "mongodb";
+import mongoose, { Model, Schema } from "mongoose";
 
-interface VideoUpdate {
-    status: "uploading" | "processing" | "completed" | "failed"
-    updatedAt: Date;
-    cloudFrontUrl?: string; // or cloudFrontUrl?: string; based on your naming
-    [key: string]: any; // Allows any additional properties in the update
+
+interface MongooseGlobalCache {
+    conn: typeof mongoose | null;
+    promise: Promise<typeof mongoose> | null;
 }
 
-export async function DBconnection(dbUrl: string) {
-    if (!dbUrl) throw Error("Please provide DB Url");
-    const dbClient = new MongoClient(dbUrl);
-    try {
-        await dbClient.connect();
-        await dbClient.db("admin").command({ ping: 1 });
-        console.log("Connected successfully to MongoDB!");
-        return dbClient;
-    } catch (error) {
-        throw new Error("❌ Something went wrong while connecting to the Database ❌");
-    }
+// Extend the NodeJS global object
+declare global {
+    var mongoose: MongooseGlobalCache | undefined;
 }
 
-export async function updateVideoStatus(dbUrl: string, videoId: string, status: "uploading" | "processing" | "completed" | "failed" , cloudFrontUrl: string) {
-    if (!dbUrl || !videoId || !status) {
-        throw new Error("Please provide DB URL, Video ID, and Status.");
-    }
-    
-    if (!ObjectId.isValid(videoId)) {
-        throw new Error("Invalid Video ID format.");
+const globalCache = globalThis.mongoose ?? {
+    conn: null,
+    promise: null,
+};
+
+export async function connectToDatabase(MONGO_URI: string): Promise<typeof mongoose> {
+    if (globalCache.conn) {
+        console.log("👍👍 MongoDB connection already established 👍👍");
+        return globalCache.conn;
     }
 
-    const client = await DBconnection(dbUrl);
+    if (!globalCache.promise) {
+        globalCache.promise = mongoose
+            .connect(MONGO_URI)
+            .then((mongooseInstance) => {
+                console.log("✅ MongoDB connected successfully");
+                return mongooseInstance;
+            })
+            .catch((err) => {
+                console.error("❌ MongoDB connection error:", err);
+                throw err;
+            });
+    }
+
+    globalCache.conn = await globalCache.promise;
+
+    globalThis.mongoose = globalCache;
+    return globalCache.conn;
+}
+
+interface IVideo extends Document {
+  status: "uploading" | "processing" | "completed" | "failed";
+  updatedAt: Date;
+  cloudFrontUrl?: string;
+}
+
+const VideoSchema = new Schema<IVideo>({
+    status: {
+        type: String,
+        enum: ["uploading", "processing", "completed", "failed"],
+        required: true,
+    },
+    updatedAt: {
+        type: Date,
+        default: Date.now,
+    },
+    cloudFrontUrl: {
+        type: String,
+    },
+});
+
+const VideoModel: Model<IVideo> = mongoose.model<IVideo>(
+    "videotranscodevideos",
+    VideoSchema
+);
+
+export async function updateVideoStatus(
+    videoId: string,
+    status: "uploading" | "processing" | "completed" | "failed",
+    cloudFrontUrl?: string
+) {
+    if (!videoId || !status) {
+        throw new Error("Please provide Video ID and Status.");
+    }
 
     try {
-        const db = client.db("Cluster0");
-        const collection = db.collection("VideoTranscodeVideos");
-
-        let updateData: VideoUpdate = {
-            status: status,
-            updatedAt: new Date()
+        const updateData: Partial<IVideo> = {
+            status,
+            updatedAt: new Date(),
         };
+        if (cloudFrontUrl) updateData.cloudFrontUrl = cloudFrontUrl;
 
-        // Conditionally add the cloudFrontUrl property if it exists
-        if (cloudFrontUrl) {
-            updateData.cloudFrontUrl = cloudFrontUrl;
-        }
-
-        const updateDoc = {
-            $set: updateData
-        };
-
-        const result = await collection.updateOne(
-            { _id: new ObjectId(videoId) },
-            updateDoc
+        const updatedVideo = await VideoModel.findByIdAndUpdate(
+            videoId,
+            { $set: updateData },
+            { new: true } // return the updated document
         );
 
-        if (result.modifiedCount === 0) {
-            console.warn(`No document found or updated with ID: ${videoId}`);
-            return { success: false, message: `No document found for ID: ${videoId}` };
+        if (!updatedVideo) {
+            throw new Error("Video not found!");
         }
 
-        console.log(`Successfully updated video with ID: ${videoId} to status: ${status}`);
-        return { success: true, modifiedCount: result.modifiedCount };
-
+        console.log("✅ Updated video:", updatedVideo);
+        return updatedVideo;
     } catch (error) {
         console.error("❌ Failed to update video status:", error);
         throw new Error("❌ Failed to update video status.");
-    } finally {
-        if (client) {
-            await client.close();
-        }
     }
 }
 
 // Example usage
-// await updateVideoStatus("your_db_url", "649c5e31c8900f001e7b415a", "completed", "https://your-hls-url.m3u8");
+// await DBconnection("your_mongodb_url");
+// await updateVideoStatus("649c5e31c8900f001e7b415a", "completed", "https://your-hls-url.m3u8");

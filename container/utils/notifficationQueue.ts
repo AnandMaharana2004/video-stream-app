@@ -8,4 +8,6 @@ export function pushNotification(videoID: string, status: "uploading" | "process
      * videoId : "${videoID}",
      * status : "Uploading"}
      */
+
+    console.log("push notificaton to the the SQS 🔔")
 }

@@ -4,16 +4,15 @@ import {
     DeleteMessageCommand,
 } from "@aws-sdk/client-sqs";
 import dotenv from "dotenv";
-import { RunTask } from "../ecs/inex";
 
 dotenv.config();
 
 const AWS_REGION = process.env.AWS_REGION;
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
-const QUEUE_URL = process.env.QUEUE_URL;
+const NOTIFICATION_QUEUE_URL = process.env.NOTIFICATION_QUEUE_URL;
 
-if (!AWS_REGION || !AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY || !QUEUE_URL) {
+if (!AWS_REGION || !AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY || !NOTIFICATION_QUEUE_URL) {
     throw new Error("Please provide the AWS credentials");
 }
 
@@ -27,7 +26,7 @@ const sqs = new SQSClient({
 
 const pollQueue = async () => {
     const params = {
-        QueueUrl: QUEUE_URL,
+        QueueUrl: NOTIFICATION_QUEUE_URL,
         MaxNumberOfMessages: 1,         // You can increase this to 10 for more throughput
         WaitTimeSeconds: 10,            // Long polling
     };
@@ -56,7 +55,7 @@ const pollQueue = async () => {
             try {
                 await sqs.send(
                     new DeleteMessageCommand({
-                        QueueUrl: QUEUE_URL,
+                        QueueUrl: NOTIFICATION_QUEUE_URL,
                         ReceiptHandle: message.ReceiptHandle!,
                     })
                 );
@@ -90,9 +89,6 @@ const handleS3Event = async (job: any) => {
         const key = decodeURIComponent(record.s3.object.key.replace(/\+/g, " "));
         console.log(`${Date.now()}📦 New video uploaded: s3://${bucket}/${key}`);
         // 👉 Here you can call a function to start transcoding or any other processing
-        RunTask("fromEcs/outputHLS", key).then(() => {
-            console.log(`${Date.now()}task done`)
-        })
     }
 };
 

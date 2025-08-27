@@ -1,173 +1,284 @@
-"use client";
+"use client"
+import React, { useRef, useState } from 'react'
+import UploadingAnimation from './UploadingAnimation';
+import { GrCloudUpload } from 'react-icons/gr';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { UploadFileController } from '@/actions/s3Actions';
+import Image from 'next/image';
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation"; // Correct hook for client-side navigation
-// import { getSession, signOut } from "next-auth/react";
+// interface HandleButtonOnClickEvent extends React.MouseEvent<HTMLButtonElement, MouseEvent> { }
 
-// Import Button from your shadcn/ui components
-import { Button } from "@/components/ui/button";
+function Navbar() {
+    const [isPopup, setIsPopup] = useState(false);
+    const [dragActive, setDragActive] = useState(false);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [thumbnail, setThumbnail] = useState<File | null>(null);
+    const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
 
-// Icons
-import {
-  PenTool,
-  Sparkles,
-  Menu as MenuIcon,
-  X as XIcon,
-  UserCircle,
-  LayoutDashboard,
-  Compass,
-  LogIn, // Icon for login button
-  LogOut, // Icon for sign-out
-} from "lucide-react";
+    const router = useRouter();
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const thumbnailInputRef = useRef<HTMLInputElement | null>(null);
 
-export function Navbar() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isAuthorized, setIsAuthorized] = useState(true);
-  const [isLoading, setIsLoading] = useState(false); // State to handle initial auth check
-  const router = useRouter();
+    // This is the corrected function signature.
+    const handleButtonOnclick = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>): void => {
+        e.preventDefault();
+        setIsPopup((pre) => !pre);
+        setSelectedFile(null);
+        setThumbnail(null);
+        setThumbnailPreview(null);
+        setIsUploading(false);
+    };
 
-  useEffect(() => {
-    // Check session on component mount
-    // (async () => {
-    //   const session = await getSession();
-    //   if (session?.user) {
-    //     console.log("User is authorized:", session.user);
-    //     setIsAuthorized(true);
-    //   } else {
-    //     setIsAuthorized(false);
-    //   }
-    //   setIsLoading(false); // Stop loading once check is complete
-    // })();
-    setIsAuthorized(true)
-    setIsLoading(false)
-  }, []);
-  // Links for authorized users
-  const navLinks = [
-    { href: "/explore", label: "Explore", icon: <Compass className="w-5 h-5 mr-2" /> },
-    { href: "/upload", label: "Upload", icon: <LayoutDashboard className="w-5 h-5 mr-2" /> },
-  ];
+    const handleFileSelect = (files: FileList | null) => {
+        if (files && files.length > 0) {
+            setSelectedFile(files[0]);
+        }
+    };
 
-  const handleSignOut = async () => {
-    // await signOut({ callbackUrl: '/' }); // Sign out and redirect to homepage
-  };
+    const handleThumbnailSelect = (files: FileList | null) => {
+        if (files && files.length > 0) {
+            const file = files[0];
+            setThumbnail(file);
+            setThumbnailPreview(URL.createObjectURL(file));
+        }
+    };
 
-  return (
-    <nav className="bg-white/70 backdrop-blur-md shadow-sm sticky top-0 z-50 w-full">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <div className="flex items-center">
-            <Link href="/" className="flex items-center space-x-2 group" aria-label="Homepage">
-              <div className="relative">
-                <PenTool className="w-7 h-7 text-blue-600 group-hover:text-blue-700 transition-colors" />
-                <Sparkles className="w-3 h-3 text-purple-500 absolute -top-1 -right-1 animate-pulse group-hover:text-purple-600 transition-colors" />
-              </div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent group-hover:opacity-80 transition-opacity">
-                BlogAI
-              </h1>
-            </Link>
-          </div>
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setDragActive(true);
+    };
 
-          {/* Desktop Nav links & User Profile */}
-          <div className="hidden md:flex items-center space-x-4">
-            {isLoading ? (
-              <div className="h-8 w-24 animate-pulse bg-gray-200 rounded-md"></div>
-            ) : isAuthorized ? (
-              <>
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.label}
-                    href={link.href}
-                    className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center"
-                  >
-                    {link.icon}
-                    {link.label}
-                  </Link>
-                ))}
-                <button
-                  onClick={() => router.push('/profile/anand-maharana')}
-                  className="p-1 rounded-full text-gray-600 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                  aria-label="User Profile"
-                >
-                  <UserCircle className="h-7 w-7" />
-                </button>
-              </>
-            ) : (
-              <Button asChild className="bg-blue-600 hover:bg-blue-700 shadow-md transition-all hover:shadow-lg">
-                <Link href="/sign-in">
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Sign In
+    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setDragActive(false);
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setDragActive(false);
+        handleFileSelect(e.dataTransfer.files);
+    };
+
+    const handleSubmitForm = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!selectedFile || !thumbnail) return;
+
+        setIsUploading(true);
+
+        try {
+            // Collect metadata
+            const formData = new FormData(e.currentTarget);
+            const title = formData.get("title") as string;
+            const description = formData.get("description") as string;
+            // const publish = formData.get("publish") ? true : false;
+
+            // Get presigned URLs from server
+            const { videoPresignedUrl, thamadilPresignedUrl } =
+                await UploadFileController(
+                    selectedFile.name,
+                    `${selectedFile.size}`,
+                    selectedFile.type,
+                    thumbnail.name,
+                    `${thumbnail.size}`,
+                    thumbnail.type,
+                    title,
+                    description
+                );
+
+            // Upload video to S3
+            await fetch(videoPresignedUrl, {
+                method: "PUT",
+                body: selectedFile,
+                headers: { "Content-Type": selectedFile.type },
+            });
+
+            // Upload thumbnail to S3
+            await fetch(thamadilPresignedUrl, {
+                method: "PUT",
+                body: thumbnail,
+                headers: { "Content-Type": thumbnail.type },
+            });
+
+            // Save metadata (optional: call your backend to store DB record)
+            // await fetch("/api/save-video-metadata", {
+            //     method: "POST",
+            //     headers: { "Content-Type": "application/json" },
+            //     body: JSON.stringify({
+            //         title,
+            //         description,
+            //         publish,
+            //         videoKey: VideoFileKey,
+            //         thumbnailKey: thamadilFileKey,
+            //     }),
+            // });
+
+            // Redirect
+            setIsUploading(false);
+            setIsPopup(false);
+            router.push("/upload");
+
+        } catch (err) {
+            console.error("Upload failed ❌", err);
+            setIsUploading(false);
+        }
+    };
+
+    return (
+        <>
+            {/* Navbar */}
+            <div className="w-full flex items-center justify-between px-6 py-4 bg-zinc-900 text-white sticky top-0 z-20">
+                <Link href={"/videos"} >
+                    <h2 className="text-xl font-bold" >Stream-Hub</h2>
                 </Link>
-              </Button>
-            )}
-          </div>
-
-          {/* === Mobile View: Menu Button OR Sign In Button === */}
-          <div className="md:hidden flex items-center">
-            {isLoading ? (
-              // --- Mobile Skeleton Loader ---
-              <div className="h-8 w-8 animate-pulse bg-gray-200 rounded-md"></div>
-            ) : isAuthorized ? (
-              // --- Authorized: Show Menu Button ---
-              <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-all"
-                aria-controls="mobile-menu"
-                aria-expanded={isMobileMenuOpen}
-              >
-                <span className="sr-only">Open main menu</span>
-                {isMobileMenuOpen ? (
-                  <XIcon className="block h-6 w-6" aria-hidden="true" />
-                ) : (
-                  <MenuIcon className="block h-6 w-6" aria-hidden="true" />
-                )}
-              </button>
-            ) : (
-              // --- Unauthorized: Show Sign In Button Directly ---
-              <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700 shadow-sm">
-                <Link href="/signin">
-                  Sign In
-                </Link>
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Menu Panel - Only renders if user is authorized AND menu is open */}
-      {isAuthorized && isMobileMenuOpen && (
-        <div className="md:hidden absolute top-16 inset-x-0 bg-white/95 backdrop-blur-md shadow-xl z-40 border-t border-gray-200" id="mobile-menu">
-          <>
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  className="text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex px-3 py-2 rounded-md text-base font-medium transition-colors items-center"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  {link.icon} {link.label}
-                </Link>
-              ))}
-            </div>
-            <div className="pt-4 pb-3 border-t border-gray-200">
-              <div className="flex items-center justify-between px-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0"><UserCircle className="h-10 w-10 text-gray-600" /></div>
-                  <div className="ml-3">
-                    <div className="text-base font-medium text-gray-800">Your Name</div>
-                    <div className="text-sm font-medium text-gray-500">your.email@example.com</div>
-                  </div>
+                <div className='flex gap-4 items-center'>
+                    <Link href={"/upload"}> Uploads</Link>
+                    <button
+                        onClick={handleButtonOnclick}
+                        className="px-4 py-1.5 rounded-xl cursor-pointer bg-blue-500 hover:bg-blue-600 transition"
+                    >
+                        + Create
+                    </button>
                 </div>
-                <Button variant="ghost" size="icon" onClick={handleSignOut} aria-label="Sign Out">
-                  <LogOut className="h-6 w-6 text-gray-600" />
-                </Button>
-              </div>
             </div>
-          </>
-        </div>
-      )}
-    </nav>
-  );
+
+            {/* Popup */}
+            {isPopup && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black/70 z-50">
+                    <div className="bg-zinc-800 rounded-lg shadow-lg p-6 w-[650px] relative text-white">
+                        <button
+                            onClick={handleButtonOnclick}
+                            className="absolute top-2 right-2 text-gray-400 hover:text-white"
+                        >
+                            ✕
+                        </button>
+                        {isUploading ? (
+                            <UploadingAnimation />
+                        ) : (
+                            <>
+                                {!selectedFile && (
+                                    <div className="flex flex-col items-center">
+                                        <h2 className="text-lg font-semibold mb-4 text-center">
+                                            Upload Video
+                                        </h2>
+                                        <div
+                                            onDragOver={handleDragOver}
+                                            onDragLeave={handleDragLeave}
+                                            onDrop={handleDrop}
+                                            className={`flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-10 transition cursor-pointer w-full ${dragActive
+                                                ? "border-blue-400 bg-blue-500/10"
+                                                : "border-gray-500 bg-zinc-900"
+                                                }`}
+                                            onClick={() => fileInputRef.current?.click()}
+                                        >
+                                            <GrCloudUpload className="text-6xl mb-3" />
+                                            <p className="text-sm mb-2">
+                                                Drag & drop your video here, or click below
+                                            </p>
+                                            <input
+                                                ref={fileInputRef}
+                                                type="file"
+                                                accept="video/*"
+                                                onChange={(e) => handleFileSelect(e.target.files)}
+                                                className="hidden"
+                                            />
+                                        </div>
+                                        <button
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className="mt-4 px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-md"
+                                        >
+                                            Select File
+                                        </button>
+                                    </div>
+                                )}
+
+                                {selectedFile && (
+                                    <form onSubmit={handleSubmitForm} className="space-y-4">
+                                        <h2 className="text-lg font-semibold mb-4 text-center">
+                                            Video Details
+                                        </h2>
+                                        <p className="text-sm text-gray-400 mb-2 text-center">
+                                            Selected file:{" "}
+                                            <span className="font-medium">{selectedFile.name}</span>
+                                        </p>
+
+                                        {/* Title */}
+                                        <div>
+                                            <label className="block text-sm mb-1">Title</label>
+                                            <input
+                                                type="text"
+                                                name="title"
+                                                required
+                                                className="w-full p-2 rounded bg-zinc-700 text-white outline-none"
+                                            />
+                                        </div>
+
+                                        {/* Description */}
+                                        <div>
+                                            <label className="block text-sm mb-1">Description</label>
+                                            <textarea
+                                                name="description"
+                                                rows={3}
+                                                className="w-full p-2 rounded bg-zinc-700 text-white outline-none"
+                                            />
+                                        </div>
+
+                                        {/* Thumbnail Upload */}
+                                        <div>
+                                            <label className="block text-sm mb-1">Thumbnail (16:9)</label>
+                                            <div
+                                                className="border-2 border-dashed rounded-lg overflow-hidden cursor-pointer hover:bg-zinc-700"
+                                                style={{ aspectRatio: "16/9" }}
+                                                onClick={() => thumbnailInputRef.current?.click()}
+                                            >
+                                                {thumbnailPreview ? (
+                                                    <Image
+                                                        src={thumbnailPreview}
+                                                        alt="Thumbnail Preview"
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                                        Click to upload thumbnail (16:9)
+                                                    </div>
+                                                )}
+                                                <input
+                                                    ref={thumbnailInputRef}
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={(e) => handleThumbnailSelect(e.target.files)}
+                                                    className="hidden"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Publish */}
+                                        <div className="flex items-center space-x-2">
+                                            <input type="checkbox" id="publish" name="publish" />
+                                            <label htmlFor="publish">Publish immediately</label>
+                                        </div>
+
+                                        {/* Submit Button */}
+                                        <button
+                                            type="submit"
+                                            disabled={isUploading}
+                                            className={`w-full py-2 rounded-md font-medium transition ${isUploading
+                                                ? "bg-green-700 cursor-not-allowed"
+                                                : "bg-green-500 hover:bg-green-600"
+                                                }`}
+                                        >
+                                            {isUploading ? "Uploading..." : "Submit"}
+                                        </button>
+                                    </form>
+                                )}
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+        </>
+    )
 }
+
+export default Navbar;

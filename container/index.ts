@@ -1,53 +1,67 @@
-
 import dotenv from "dotenv"
-import { DeleteObjectFromS3, DownloadObjectFromS3, uploadFolderToS3, UploadObjectOnS3 } from "./utils/s3utils"
+import { DeleteObjectFromS3, DownloadObjectFromS3, uploadFolderToS3 } from "./utils/s3utils"
 import { convertToHLSFormat } from "./utils/ffmpeg"
 import path from "path";
 import { mkdir } from "fs/promises";
-import { updateVideoStatus } from "./utils/database";
+import { connectToDatabase, updateVideoStatus } from "./utils/database";
+import { pushNotification } from "./utils/notifficationQueue";
 
 dotenv.config();
 
 (async () => {
     try {
+
+        /**
+         * configuare all teh constant veriables 
+         * connect to database 
+         * 1. change video status uploadind to process 
+         * 2. push notification 
+         * 3. download file from S3 to local 
+         * 4. process the video using ffmpeg 
+         * 5. upload the file into the S3 permanent 
+         * 6. change video status process to completed
+         * 7. push notification 
+         * 8. delete temporary file from s3
+         */
+
         console.log('Start time : ', Date.now())
+
+        // environment veriables :-
         const DatabaseUrl = process.env.MONGO_URI
         const cloudfront_domain_name = process.env.CLOUDFRONT_DOMAIN_NAME
-        if (!cloudfront_domain_name) throw Error("please provide cloudfront_domain_name in Environment veriable")
-        if (!DatabaseUrl) throw Error("Please provide Database URL in Environment veriable")
-
-        const temporaryBucket = "anand-video-stream-bucket"
-        const permanentBucket = "anand-video-stream-bucket"
         const temporaryVideoKey = process.env.TEMP_VIDEO_KEY
-        // const s3OutputPath = process.env.S3_OUTPUT_PATH
+
+        if (!DatabaseUrl) throw Error("please provide Databasee Url")
         if (!temporaryVideoKey) throw Error("please provide temporary video key")
-        const splitkey = temporaryVideoKey?.split("/")
-        const videoIDwithFileName = splitkey[1].split(".")
-        const s3OutputPath = `permanent/hls/${videoIDwithFileName[0]}`
-        if (!temporaryVideoKey) { throw Error("Provide the key name of the Tempory video") }
-        if (!s3OutputPath) { throw Error("Please provide the folder where you store the HLS format video in anand-vieo-stream bucket") }
+        if (!cloudfront_domain_name) throw Error("please provide cloudfront_domain_name in Environment veriable")
 
-        const inputPath = path.join(__dirname, "videos", "input");
-        await mkdir(inputPath, { recursive: true });
+        const bucketName = "anand-video-stream-bucket"
 
-        const filePath = path.join(inputPath, splitkey[1])
+        const { VideoId, s3KeyFolder, videoFileName } = getVideoFileDatas(temporaryVideoKey)
 
-        await DownloadObjectFromS3(temporaryBucket, temporaryVideoKey, filePath);
-
-        const inputVideoPath = path.join(__dirname, `videos/input/${splitkey[1]}`);
+        const inputDir = path.join(__dirname, 'videos/input');
         const outputHlsDirectory = path.join(__dirname, 'videos/output');
+        const inputVideoPath = path.join(inputDir, videoFileName);
+        await mkdir(inputDir, { recursive: true });
         await mkdir(outputHlsDirectory, { recursive: true });
 
+        await connectToDatabase(DatabaseUrl)
+
+        await updateVideoStatus(VideoId, "processing")
+
+        pushNotification(VideoId, "processing")
+
+        await DownloadObjectFromS3(bucketName, temporaryVideoKey, inputVideoPath);
+
         await convertToHLSFormat(inputVideoPath, outputHlsDirectory)
-        const hlsInputFilePath = path.join(__dirname, "videos/output")
-        await uploadFolderToS3(hlsInputFilePath, permanentBucket, s3OutputPath)
 
-        const videoId = videoIDwithFileName[0].split("-")
-        const cloudFrontUrl = `${cloudfront_domain_name}/${videoId[0]}/master.m3u8`
+        await uploadFolderToS3(outputHlsDirectory, bucketName, `permanent/hls/${s3KeyFolder}`)
 
-        await updateVideoStatus(DatabaseUrl, videoId[0], "completed",cloudFrontUrl)
+        await updateVideoStatus(VideoId, "completed", `${cloudfront_domain_name}/${s3KeyFolder}/master.m3u8`)
 
-        await DeleteObjectFromS3(temporaryBucket, temporaryVideoKey)
+        pushNotification(VideoId, "completed")
+
+        await DeleteObjectFromS3(bucketName, temporaryVideoKey)
         console.log('End time : ', Date.now())
 
         process.exit(0)
@@ -57,3 +71,12 @@ dotenv.config();
         process.exit(0)
     }
 })()
+
+function getVideoFileDatas(s3Key: string) {
+    // temp/68a4836b4775c5ef74d6e773-video-480p.mp4
+    const [a, videoFileName] = s3Key.split("/")
+    const [VideoId, _, __] = videoFileName.split("-")
+    const [s3KeyFolder, ___] = videoFileName.split(".")
+
+    return ({ VideoId, s3KeyFolder, videoFileName })
+}
