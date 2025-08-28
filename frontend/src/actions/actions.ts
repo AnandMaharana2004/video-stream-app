@@ -18,45 +18,50 @@ export async function GetVideos(): Promise<IReturnVideoData[]> {
     await connectTODB()
     const videos = await Video.find({ status: "completed" })
     console.log("videos : ", videos)
-
-    // await GetUserVideos('68947fc053efc9f42bc60a3c')
-    // console.log("the videhgfdsdfghjis ;: ", await GetVideosForUploadPage("68947fc053efc9f42bc60a3c"))
-    // console.log("user is : ", await getUserInfo("68947fc053efc9f42bc60a3c"))
-    // mock database response
-    const returnData: IReturnVideoData[] = [
-        {
-            videoId: "ertyuiuytrewsdfghjkhgfdw11111",
-            videoTitle: "this is the test data",
-            videoDescription: "any video description",
-            videoUrl: "this contain the master.m3u8 file url",
-            thamdilUrl: "https://i.ytimg.com/vi/nzBwdkjEo-Y/hq720.jpg?sqp=-oaymwEnCNAFEJQDSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLCoHGIRsqY5VGkX7VOdcaWHKjaYmw",
-            autoherName: "Anand Maharana"
-        },
-        {
-            videoId: "ertyuiuytrewsdfghjkhgfdw22222",
-            videoTitle: "this is the test data",
-            videoDescription: "any video description",
-            videoUrl: "this contain the master.m3u8 file url",
-            thamdilUrl: "https://i.ytimg.com/vi/9zZfabSup8c/hq720.jpg",
-            autoherName: "Anand Maharana"
-        },
-        {
-            videoId: "ertyuiuytrewsdfghjkhgfdw33333",
-            videoTitle: "this is the test data",
-            videoDescription: "any video description",
-            videoUrl: "this contain the master.m3u8 file url",
-            thamdilUrl: "https://i.ytimg.com/vi/1OAjeECW90E/hqdefault.jpg",
-            autoherName: "Anand Maharana"
-        },
-        {
-            videoId: "ertyuiuytrewsdfghjkhgfdw44444",
-            videoTitle: "this is the test data",
-            videoDescription: "any video description",
-            videoUrl: "this contain the master.m3u8 file url",
-            thamdilUrl: "https://i.ytimg.com/vi/gvhVtaEA1z8/hq720.jpg",
+    const returnData = videos.map((video) => {
+        return {
+            videoId: video._id,
+            videoTitle: video.title,
+            videoDescription: video.description,
+            videoUrl: video.cloudFrontUrl,
+            thamdilUrl: `https://d11wd0j17w56pr.cloudfront.net/${encodeURIComponent(video.thamdilPicUrl)}`,
             autoherName: "Anand Maharana"
         }
-    ];
+    })
+    // const returnData: IReturnVideoData[] = [
+    //     {
+    //         videoId: "ertyuiuytrewsdfghjkhgfdw11111",
+    //         videoTitle: "this is the test data",
+    //         videoDescription: "any video description",
+    //         videoUrl: "this contain the master.m3u8 file url",
+    //         thamdilUrl: "https://d11wd0j17w56pr.cloudfront.net/68a4836b4775c5ef74d6e773-WhatsApp%20Image%202025-05-25%20at%2010.25.45%20PM.jpeg",
+    //         autoherName: "Anand Maharana"
+    //     },
+    //     {
+    //         videoId: "ertyuiuytrewsdfghjkhgfdw22222",
+    //         videoTitle: "this is the test data",
+    //         videoDescription: "any video description",
+    //         videoUrl: "this contain the master.m3u8 file url",
+    //         thamdilUrl: "https://i.ytimg.com/vi/9zZfabSup8c/hq720.jpg",
+    //         autoherName: "Anand Maharana"
+    //     },
+    //     {
+    //         videoId: "ertyuiuytrewsdfghjkhgfdw33333",
+    //         videoTitle: "this is the test data",
+    //         videoDescription: "any video description",
+    //         videoUrl: "this contain the master.m3u8 file url",
+    //         thamdilUrl: "https://i.ytimg.com/vi/1OAjeECW90E/hqdefault.jpg",
+    //         autoherName: "Anand Maharana"
+    //     },
+    //     {
+    //         videoId: "ertyuiuytrewsdfghjkhgfdw44444",
+    //         videoTitle: "this is the test data",
+    //         videoDescription: "any video description",
+    //         videoUrl: "this contain the master.m3u8 file url",
+    //         thamdilUrl: "https://i.ytimg.com/vi/gvhVtaEA1z8/hq720.jpg",
+    //         autoherName: "Anand Maharana"
+    //     }
+    // ];
     return returnData;
 }
 
@@ -104,15 +109,6 @@ export async function GetUserVideos(authorID: string) {
 
 }
 
-// export async function DeleteVideo(videoID:string) {
-//     // find the video and delete also delete the object from s3 also
-// }
-
-// export async function UpdateVideo(videoID:string) {
-//     // find the video and update what ever the user want to update
-// }
-
-// get usre info 
 export async function getUserInfo(userID: string) {
     try {
         await connectTODB();
@@ -147,7 +143,7 @@ export async function GetVideosForUploadPage(userID: string) {
             videoID: video._id.toString(),
             videoTitle: video.title,
             status: video.status,
-            thumbnail: video.thumbnailPicUrl || "https://default-thumbnail-url.com/thumb.jpg",
+            thumbnail: `https://d11wd0j17w56pr.cloudfront.net/${encodeURIComponent(video.thamdilPicUrl)}`,
         }));
     } catch (error: unknown) {
         console.error("Error in GetVideosForUploadPage:", error);
@@ -169,5 +165,34 @@ export async function RefresshVideo(videoID: string) {
     } catch (error) {
         console.log("Something went wrong while Refresh video content !! ❌", error)
         throw Error("Something went wrong wile refresh the video content , Error on RefresshVideo function ")
+    }
+}
+
+export async function getVideoInfo(videoID: string) {
+    // this function return the videos metadata and the .m3u8file also 
+    // for this we will use aggrigate and fetch data like 
+    // {
+    //     videoId ,
+    //     videosUrl : .m3u8
+    //     thatmdilUrl, 
+    //     User name, 
+    //     userprofilePic, 
+    //     // recomand videos [] in future 
+    // }
+
+    try {
+        await connectTODB()
+        const videoId = new mongoose.Types.ObjectId(videoID)
+
+        const video = await Video.findById(videoID)
+        if (!video) throw Error("Invalid Video Id please provide proper video id ")
+
+        return {
+            video
+        }
+
+    } catch (error) {
+        console.log("Error on the getVideoInfo function ", error)
+        throw Error("something went wrong whilee fetch video data")
     }
 }

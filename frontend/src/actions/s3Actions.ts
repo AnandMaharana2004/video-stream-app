@@ -90,8 +90,10 @@ export async function UploadFileController(
 
         videoDocument.temporarys3Key = VideoFileKey
         videoDocument.thumbnailS3Key = thamadilFileKey
+        videoDocument.thamdilPicUrl = `${videoDocument._id}-${thamadilFileName}`
         await videoDocument.save()
-        console.log("the presignur is : ", videoPresignedUrl, "and the presign thamdil url is : ", thamadilPresignedUrl)
+        // console.log("the presignur is : ", videoPresignedUrl, "and the presign thamdil url is : ", thamadilPresignedUrl)
+        console.log("final video document is : ", videoDocument)
         return { videoPresignedUrl, thamadilPresignedUrl, VideoFileKey, thamadilFileKey };
     } catch (error: unknown) {
         console.log("server error :", error)

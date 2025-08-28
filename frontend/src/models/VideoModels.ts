@@ -44,7 +44,7 @@ const VideoSchema = new Schema<IVideo>({
     },
     thamdilPicUrl: {
         type: String,
-        default : "not set yet"
+        // default : "not set yet"
     },
     thatmdilS3key: {
         type: String
