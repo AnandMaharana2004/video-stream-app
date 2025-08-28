@@ -4,7 +4,7 @@ import {
     DeleteMessageCommand,
 } from "@aws-sdk/client-sqs";
 import dotenv from "dotenv";
-import { RunTask } from "../ecs/inex";
+import { RunTask } from "../ecs";
 
 dotenv.config();
 

@@ -43,8 +43,8 @@ export async function RunTask(outputPath: string, videoKey: string) {
                     { name: "TEMP_VIDEO_KEY", value: `${videoKey}` },
                     { name: "S3_OUTPUT_PATH", value: `${outputPath}` },
                     { name: "AWS_REGION", value: `ap-south-1` },
-                    { name: "MONGO_URI", value: `mongodb+srv://anandmaharana427:4vG0cyO2EfMzkeFb@cluster0.l3bmxmu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0` },
-                    { name: "CLOUDFRONT_DOMAIN_NAME", value: `d2ovrq2g0trwce.cloudfront.net` },
+                    { name: "MONGO_URI", value: `${process.env.MONGO_URI}` },
+                    { name: "CLOUDFRONT_DOMAIN_NAME", value: `${process.env.CLOUDFRONT_DOMAIN_NAME}` },
                 ]
             }]
         }
