@@ -89,7 +89,6 @@ function UploadPage({ user, videoData: initialVideoData, refresshAction }: Uploa
   }
   return (
     <div className="bg-zinc-900 text-gray-200 min-h-screen">
-      <Navbar />
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* User Profile Section */}
