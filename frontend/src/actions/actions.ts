@@ -1,6 +1,6 @@
-import { User } from "@/models/UserModel";
-import { Video } from "@/models/VideoModels";
-import { connectTODB } from "@/utils/Dbconnection";
+import { User } from "@/models/userModel";
+import { Video } from "@/models/videoModels";
+import { connectTODB } from "@/utils/dbconnection";
 
 import mongoose from "mongoose";
 

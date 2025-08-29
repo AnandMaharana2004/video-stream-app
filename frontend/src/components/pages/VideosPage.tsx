@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import VideoList from "@/components/Video";
+import VideoList from "@/components/video";
 import { IReturnVideoData } from "@/actions/actions";
 // import Navbar from "@/components/Navbar";
 

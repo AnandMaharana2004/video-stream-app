@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 // import { Navbar } from "@/components/Navbar";
 import { FaTrash, FaEdit, FaSyncAlt, FaEye } from "react-icons/fa";
-import EditPopup from "@/components/EditPopup";
+import EditPopup from "@/components/editPopup";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 
