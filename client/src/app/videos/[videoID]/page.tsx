@@ -31,7 +31,7 @@ export default async function VideoPage({ params }: VideoPageProps) {
       <div className="p-5 bg-transparent min-h-screen">
         <div className="max-w-4xl mx-auto">
           <VideoPlayer
-            src={'http://d2ovrq2g0trwce.cloudfront.net/68b08cccbe4e28ced7c5a868-video-480p/master.m3u8'}
+            src={'https://d2ovrq2g0trwce.cloudfront.net/68b08cccbe4e28ced7c5a868-video-480p/master.m3u8'}
             poster={'https://d11wd0j17w56pr.cloudfront.net/68b08cccbe4e28ced7c5a868-Digital%20Collaboration%20in%20Action.png'}
             autoplay={false}
             controls={true}
