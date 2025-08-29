@@ -1,6 +1,6 @@
 import { GetVideos } from "@/actions/actions";
-import {Navbar} from "@/components/navbar";
-import VideosPage from "@/components/pages/videosPage";
+import {Navbar} from "@/components/Navbar";
+import VideosPage from "@/components/pages/VideosPage";
 // import VideoList from "./VideoList"; // client component
 export const dynamic = "force-dynamic";
 

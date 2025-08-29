@@ -1,6 +1,6 @@
 "use client"
 import React, { useRef, useState } from 'react'
-import UploadingAnimation from '@/components/uploadingAnimation';
+import UploadingAnimation from '@/components/UploadingAnimation';
 import { GrCloudUpload } from 'react-icons/gr';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';

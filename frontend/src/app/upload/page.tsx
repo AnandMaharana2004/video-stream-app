@@ -1,6 +1,6 @@
 import { getUserInfo, GetVideosForUploadPage, RefresshVideo } from "@/actions/actions"
-import { Navbar } from "@/components/navbar";
-import UploadPage from "@/components/pages/uploadPage"
+import { Navbar } from "@/components/Navbar";
+import UploadPage from "@/components/pages/UploadPage"
 
 export const dynamic = "force-dynamic"
 

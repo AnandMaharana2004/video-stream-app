@@ -3,8 +3,8 @@
 // import { auth } from "@/auth";
 
 import { z } from "zod";
-import { Video } from "@/models/videoModels";
-import { connectTODB } from "@/utils/dbconnection";
+import { Video } from "@/models/VideoModels";
+import { connectTODB } from "@/utils/Dbconnection";
 import { User } from "@/models/userModel";
 import { generateUrlForUploadFileOnS3 } from "@/aws/setup";
 
