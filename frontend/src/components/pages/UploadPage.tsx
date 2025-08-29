@@ -1,7 +1,7 @@
 // UploadPage.tsx
 "use client";
 import React, { useState } from "react";
-import Navbar from "@/components/Navbar";
+// import { Navbar } from "@/components/Navbar";
 import { FaTrash, FaEdit, FaSyncAlt, FaEye } from "react-icons/fa";
 import EditPopup from "@/components/EditPopup";
 import Image from "next/image";

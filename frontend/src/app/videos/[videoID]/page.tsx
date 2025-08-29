@@ -1,5 +1,5 @@
 import { getVideoInfo } from "@/actions/actions";
-import Navbar from "@/components/Navbar";
+import {Navbar} from "@/components/navbar";
 import VideoPlayer from "@/components/pages/VideoPlayer";
 import Image from "next/image";
 import { notFound } from "next/navigation"; // Import the notFound function
