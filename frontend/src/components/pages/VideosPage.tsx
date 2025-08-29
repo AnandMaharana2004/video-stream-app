@@ -1,8 +1,8 @@
 "use client";
 import React from "react";
-import VideoList from "../Video";
+import VideoList from "@/components/Video";
 import { IReturnVideoData } from "@/actions/actions";
-import Navbar from "../Navbar";
+import Navbar from "@/components/Navbar";
 
 function VideosPage({ videos }: { videos: IReturnVideoData[] }) {
   return (
