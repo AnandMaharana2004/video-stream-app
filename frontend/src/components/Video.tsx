@@ -38,13 +38,13 @@ export default function VideoList({ videos }: { videos: Video[] }) {
 
                     {/* Metadata */}
                     <div className="p-4">
-                        <h3 className="text-lg font-semibold text-gray-800 truncate">
+                        <h3 className="text-lg font-semibold truncate">
                             {video.videoTitle}
                         </h3>
-                        <p className="text-sm text-gray-500 mt-1">{video.autoherName}</p>
-                        <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                        <p className="text-sm mt-1">{video.autoherName}</p>
+                        {/* <p className="text-sm mt-2 line-clamp-2">
                             {video.videoDescription}
-                        </p>
+                        </p> */}
                     </div>
                 </div>
             ))}

@@ -5,6 +5,7 @@ import Navbar from "../Navbar";
 import { FaTrash, FaEdit, FaSyncAlt, FaEye } from "react-icons/fa";
 import EditPopup from "@/components/EditPopup";
 import Image from "next/image";
+import { redirect } from "next/navigation";
 
 // Define types
 type Video = {
@@ -83,6 +84,9 @@ function UploadPage({ user, videoData: initialVideoData, refresshAction }: Uploa
     }
   };
 
+  const handleViewClick = (videoID: string) => {
+    redirect(`videos/${videoID}`)
+  }
   return (
     <div className="bg-zinc-900 text-gray-200 min-h-screen">
       <Navbar />
@@ -153,6 +157,9 @@ function UploadPage({ user, videoData: initialVideoData, refresshAction }: Uploa
 
                   {video.status.toLowerCase() === "completed" ? (   // 👈 normalize case
                     <button
+                      onClick={() => {
+                        handleViewClick(video.videoID)
+                      }}
                       className="hover:text-green-500 transition-colors"
                       title="View"
                     >

@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: '*.googleusercontent.com', // Using a wildcard for subdomains
+      },
     ],
   },
 };

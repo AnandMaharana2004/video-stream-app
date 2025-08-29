@@ -122,7 +122,7 @@ export async function getUserInfo(userID: string) {
         return {
             userID,
             userName: user.username,
-            profilePic: user.profilePic || "https://yt3.ggpht.com/yfDlM-R-AdeTSX5H2a_4OX2bzr3wr8kcof8JgQk6Y32aNWBpehOMZFOaYrr6BhjT3U0KueVibg=s88-c-k-c0x00ffffff-no-rj",
+            profilePic: "https://lh3.googleusercontent.com/ogw/AF2bZyjSDEA0RHfwdkGiSl0SBlfWZI0yHFeQPmLKJ3YVw0q-Xj0=s64-c-mo",
             numberOfVideos,
         };
     } catch (error: unknown) {
@@ -184,7 +184,7 @@ export async function getVideoInfo(videoID: string) {
         await connectTODB()
         const videoId = new mongoose.Types.ObjectId(videoID)
 
-        const video = await Video.findById(videoID)
+        const video = await Video.findById(videoId)
         if (!video) throw Error("Invalid Video Id please provide proper video id ")
 
         return {
