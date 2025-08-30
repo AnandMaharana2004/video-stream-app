@@ -188,7 +188,13 @@ export async function getVideoInfo(videoID: string) {
         if (!video) throw Error("Invalid Video Id please provide proper video id ")
 
         return {
-            video
+            videoId: video._id,
+            videoUrl: `https://${video.cloudFrontUrl}`,
+            thamdilUrl: `https://d11wd0j17w56pr.cloudfront.net/${encodeURIComponent(video.thamdilPicUrl)}`,
+            User: "Anand Maharana",
+            userprofilePic: "https://lh3.googleusercontent.com/ogw/AF2bZyjSDEA0RHfwdkGiSl0SBlfWZI0yHFeQPmLKJ3YVw0q-Xj0=s64-c-mo",
+            descripton: `${video.description}`,
+            title: `${video.title}`
         }
 
     } catch (error) {
