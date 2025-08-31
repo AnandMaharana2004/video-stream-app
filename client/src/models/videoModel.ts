@@ -7,11 +7,10 @@ interface IVideo extends Document {
     cloudFrontUrl: string,
     videoS3key: string,
     author: mongoose.Types.ObjectId,
-    duration: number,
-    preSignedUrl: string,
     thamdilPicUrl: string,
-    thatmdilS3key: string,
-    isPublic: boolean
+    thumbnailS3Key: string,
+    isPublic: boolean,
+    temporarys3Key: string
 }
 
 const VideoSchema = new Schema<IVideo>({
@@ -29,24 +28,18 @@ const VideoSchema = new Schema<IVideo>({
     cloudFrontUrl: {
         type: String
     },
-    videoS3key: {
+    temporarys3Key: {
         type: String,
     },
     author: {
         type: Schema.Types.ObjectId,
         ref: "videostreamUser"
     },
-    duration: {
-        type: Number
-    },
-    preSignedUrl: {
-        type: String
-    },
     thamdilPicUrl: {
         type: String,
         // default : "not set yet"
     },
-    thatmdilS3key: {
+    thumbnailS3Key: {
         type: String
     },
     isPublic: {
