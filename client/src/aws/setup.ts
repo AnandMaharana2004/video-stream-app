@@ -1,4 +1,11 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import {
+    S3Client,
+    PutObjectCommand,
+    GetObjectCommand,
+    DeleteObjectCommand,
+    DeleteObjectsCommand,
+    ListObjectsV2Command
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 function S3ClientSetup() {
@@ -52,6 +59,62 @@ export const GetObjectFromS3 = async (
         Key: keyName,
     })
     const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 60 * timeDuration })
-    if(!signedUrl) throw Error("Something went wrong while generating the signedUrl")
+    if (!signedUrl) throw Error("Something went wrong while generating the signedUrl")
     return signedUrl
+}
+
+export const DeleteFilesFromS3 = async (key: string, bucketName: string) => {
+    try {
+        console.log("the incomming key is : ", key)
+        const s3Client = S3ClientSetup();
+        const deleteCommand = new DeleteObjectCommand({
+            Bucket: bucketName,
+            Key: key,
+        })
+        const result = await s3Client.send(deleteCommand)
+        console.log("Delte objectly successfyly", result)
+        return true
+    } catch (error) {
+        console.log(`Something went wrong while deleting file from S3, s3 key : ${key} and error`, error)
+        return false
+        // throw Error(`Something went wrong while deleting Hls file from S3, s3 key : ${key}`)
+    }
+}
+
+export const DeleteWholeFolder = async (key: string, bucketName: string) => {
+    try {
+        const s3Client = S3ClientSetup();
+
+        // 1. List all objects with the specified prefix (folder)
+        const listCommand = new ListObjectsV2Command({
+            Bucket: bucketName,
+            Prefix: key
+        });
+
+        const listResponse = await s3Client.send(listCommand);
+
+        if (!listResponse.Contents || listResponse.Contents.length === 0) {
+            console.log(`No objects found in folder: ${key}`);
+            return;
+        }
+        console.log("als file list are : ", listResponse.Contents)
+        // 2. Prepare the list of objects to be deleted
+        const objectsToDelete = listResponse.Contents.map((object) => ({ Key: object.Key }));
+
+        // 3. Delete all listed objects in a single batch operation
+        const deleteCommand = new DeleteObjectsCommand({
+            Bucket: bucketName,
+            Delete: {
+                Objects: objectsToDelete
+            }
+        });
+
+        const deleteResponse = await s3Client.send(deleteCommand);
+        console.log(`Successfully deleted ${deleteResponse.Deleted?.length || 0} objects from folder: ${key}`);
+        return deleteResponse;
+
+    } catch (error) {
+        console.error(`Something went wrong while deleting folder with prefix from S3, s3 prefix key : ${key}. Error:`, error);
+        throw error; // Re-throw the error to be handled by the caller
+    }
 }

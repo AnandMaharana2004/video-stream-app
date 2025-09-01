@@ -78,7 +78,7 @@ export async function UploadFileController(
 
         const videoDocument = await Video.create({
             author: userId,
-            title: title || "Now testing time",
+            title: title || `${fileName}`,
             fileName,
             description: description || "",
         });

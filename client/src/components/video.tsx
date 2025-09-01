@@ -32,6 +32,8 @@ export default function VideoList({ videos }: { videos: Video[] }) {
                         <Image
                             src={video.thamdilUrl}
                             alt={video.videoTitle}
+                            height={800}
+                            width={500}
                             className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                         />
                     </div>

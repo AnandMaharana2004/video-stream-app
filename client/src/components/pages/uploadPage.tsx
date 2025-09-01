@@ -1,41 +1,47 @@
 // UploadPage.tsx
 "use client";
 import React, { useState } from "react";
-// import { Navbar } from "@/components/Navbar";
 import { FaTrash, FaEdit, FaSyncAlt, FaEye } from "react-icons/fa";
 import EditPopup from "@/components/editPupup";
+import DeletePopup from "@/components/deletePopup";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 
 // Define types
 type Video = {
   videoID: string;
-  videoTitle: string; // Corrected type name for clarity
+  videoTitle: string;
   thumbnail: string;
   status: string;
-  // Add other fields as needed
 };
 
 type User = {
   profilePic: string;
   userName: string;
   numberOfVideos: number;
-  // Add other fields as needed
 };
 
 interface UploadPageProps {
   user: User;
   videoData: Video[];
   refresshAction: (videoID: string) => Promise<{ _id: string; status: string }>;
+  deleteAction: (videoID: string) => Promise<{ status: boolean }>;
 }
 
-function UploadPage({ user, videoData: initialVideoData, refresshAction }: UploadPageProps) {
+function UploadPage({
+  user,
+  videoData: initialVideoData,
+  refresshAction,
+  deleteAction,
+}: UploadPageProps) {
   const [videoData, setVideoData] = useState<Video[]>(initialVideoData);
   const [isEditPopupOpen, setIsEditPopupOpen] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [refreshingVideoId, setRefreshingVideoId] = useState<string | null>(
     null
   );
+  const [isDeletePopupOpen, setIsDeletePopupOpen] = useState(false);
+  const [videoToDelete, setVideoToDelete] = useState<Video | null>(null);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -59,10 +65,7 @@ function UploadPage({ user, videoData: initialVideoData, refresshAction }: Uploa
     setRefreshingVideoId(videoID);
 
     try {
-      // ✅ Await the server action
       const result = await refresshAction(videoID);
-
-      // Example server action returns { videoID, status }
       console.log("Server returned:", result);
 
       setVideoData((prevData) =>
@@ -72,8 +75,6 @@ function UploadPage({ user, videoData: initialVideoData, refresshAction }: Uploa
       );
     } catch (error) {
       console.error("Error refreshing video:", error);
-
-      // fallback to "failed"
       setVideoData((prevData) =>
         prevData.map((video) =>
           video.videoID === videoID ? { ...video, status: "failed" } : video
@@ -85,17 +86,43 @@ function UploadPage({ user, videoData: initialVideoData, refresshAction }: Uploa
   };
 
   const handleViewClick = (videoID: string) => {
-    redirect(`videos/${videoID}`)
-  }
+    redirect(`videos/${videoID}`);
+  };
+
+  const handleDeleteClick = (video: Video) => {
+    setVideoToDelete(video);
+    setIsDeletePopupOpen(true);
+  };
+
+  const handleDeleteConfirmed = async () => {
+    if (!videoToDelete) {
+      // Return a resolved promise with a status to match the type signature
+      return { status: false };
+    }
+
+    try {
+      const result = await deleteAction(videoToDelete.videoID);
+      console.log("the upcoming delete result is : ", result);
+      if (!result.status) throw Error("Something went wrong while deleting")
+      setVideoData(prevData => prevData.filter(video => video.videoID !== videoToDelete.videoID));
+      return result; // Explicitly return the result
+    } catch (error) {
+      console.error("Error deleting video:", error);
+      // Return a resolved promise with a status to handle the error case
+      return { status: false };
+    }
+  };
+
   return (
     <div className="bg-zinc-900 text-gray-200 min-h-screen">
-
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* User Profile Section */}
+        {/* ... (User Profile Section) ... */}
         <div className="flex flex-col sm:flex-row items-center gap-6 p-6 rounded-lg bg-zinc-800 border border-zinc-700 shadow-md mb-8">
           <Image
             src={user?.profilePic}
             alt="profile"
+            height={500}
+            width={300}
             className="w-20 h-20 rounded-full object-cover border-2 border-blue-500"
           />
           <div className="text-center sm:text-left">
@@ -106,7 +133,7 @@ function UploadPage({ user, videoData: initialVideoData, refresshAction }: Uploa
           </div>
         </div>
 
-        {/* Videos List Section */}
+        {/* ... (Videos List Section) ... */}
         <div className="p-6 rounded-lg bg-zinc-800 border border-zinc-700 shadow-md">
           <h3 className="text-xl font-semibold mb-6">Your Uploads</h3>
           <div className="space-y-4">
@@ -119,6 +146,8 @@ function UploadPage({ user, videoData: initialVideoData, refresshAction }: Uploa
                   <Image
                     src={video.thumbnail}
                     alt="video thumbnail"
+                    height={500}
+                    width={300}
                     className="w-full sm:w-32 h-auto sm:h-20 object-cover rounded-md border border-zinc-600"
                   />
                   <div className="flex-1 text-center sm:text-left">
@@ -137,7 +166,7 @@ function UploadPage({ user, videoData: initialVideoData, refresshAction }: Uploa
                   </div>
                 </div>
 
-                {/* Action Buttons */}
+                {/* ... (Action Buttons) ... */}
                 <div className="flex justify-center sm:justify-end gap-4 text-gray-400 w-full sm:w-auto">
                   <button
                     onClick={() => handleEditClick(video)}
@@ -146,18 +175,17 @@ function UploadPage({ user, videoData: initialVideoData, refresshAction }: Uploa
                   >
                     <FaEdit size={20} />
                   </button>
-
                   <button
+                    onClick={() => handleDeleteClick(video)}
                     className="hover:text-red-500 transition-colors"
                     title="Delete"
                   >
                     <FaTrash size={20} />
                   </button>
-
-                  {video.status.toLowerCase() === "completed" ? (   // 👈 normalize case
+                  {video.status.toLowerCase() === "completed" ? (
                     <button
                       onClick={() => {
-                        handleViewClick(video.videoID)
+                        handleViewClick(video.videoID);
                       }}
                       className="hover:text-green-500 transition-colors"
                       title="View"
@@ -169,7 +197,7 @@ function UploadPage({ user, videoData: initialVideoData, refresshAction }: Uploa
                       onClick={() => handleRefreshClick(video.videoID)}
                       className="hover:text-green-500 transition-colors"
                       title="Refresh"
-                      disabled={refreshingVideoId === video.videoID}  // 👈 optional UX
+                      disabled={refreshingVideoId === video.videoID}
                     >
                       <FaSyncAlt
                         size={20}
@@ -180,7 +208,6 @@ function UploadPage({ user, videoData: initialVideoData, refresshAction }: Uploa
                     </button>
                   )}
                 </div>
-
               </div>
             ))}
           </div>
@@ -193,6 +220,15 @@ function UploadPage({ user, videoData: initialVideoData, refresshAction }: Uploa
           video={selectedVideo}
           onClose={() => setIsEditPopupOpen(false)}
           onSave={(data) => console.log("Saved data:", data)}
+        />
+      )}
+
+      {/* Delete Popup */}
+      {isDeletePopupOpen && videoToDelete && (
+        <DeletePopup
+          videoTitle={videoToDelete.videoTitle}
+          onClose={() => setIsDeletePopupOpen(false)}
+          onDelete={handleDeleteConfirmed} // This is the call
         />
       )}
     </div>

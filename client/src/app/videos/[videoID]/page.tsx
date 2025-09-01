@@ -41,6 +41,8 @@ export default async function VideoPage({ params }: VideoPageProps) {
             <div className=" flex items-center gap-2 py-2">
               <Image src={result.userprofilePic}
                 alt="user profilepic"
+                height={40}
+                width={40}
                 className="rounded-full h-10" />
               <h1 className="text-blue-100">{result.User}</h1>
             </div>
