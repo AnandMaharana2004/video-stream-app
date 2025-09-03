@@ -18,13 +18,13 @@ export interface IReturnVideoData {
 export async function GetVideos(): Promise<IReturnVideoData[]> {
     await connectTODB()
     const videos = await Video.find({ status: "completed" })
-    console.log("videos : ", videos)
+    // console.log("videos : ", videos)
     const returnData = videos.map((video) => {
         return {
-            videoId: video._id,
-            videoTitle: video.title,
-            videoDescription: video.description,
-            videoUrl: video.cloudFrontUrl,
+            videoId: `${video._id}`,
+            videoTitle: `${video.title}`,
+            videoDescription: `${video.description}`,
+            videoUrl: `${video.cloudFrontUrl}`,
             thamdilUrl: `https://d11wd0j17w56pr.cloudfront.net/${encodeURIComponent(video.thamdilPicUrl)}`,
             autoherName: "Anand Maharana"
         }

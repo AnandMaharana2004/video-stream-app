@@ -8,6 +8,7 @@ export interface IUser extends Document {
     password?: string;
     google_id?: string;
     email: string;
+    profilePic: string;
     comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -35,15 +36,20 @@ const userSchema = new Schema<IUser>(
             trim: true,
             lowercase: true,
         },
+        profilePic: {
+            type: String,
+        }
     },
     {
         timestamps: true,
     }
 );
 
-
-userSchema.methods.comparePassword = function (candidatePassword: string): Promise<boolean> {
-    return bcrypt.compare(candidatePassword, this.password || '');
-};
-
+userSchema.pre("save", async function (next) {
+    if (this.isModified("password")) {
+        const hasPassword = await bcrypt.hash(this.password || "", 10)
+        this.password = hasPassword
+    }
+    next()
+})
 export const User = models?.VideoTransCodeUser || model<IUser>('VideoTransCodeUser', userSchema);
