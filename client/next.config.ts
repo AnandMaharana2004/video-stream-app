@@ -11,11 +11,11 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: '*.googleusercontent.com', // Using a wildcard for subdomains
+        hostname: '*.googleusercontent.com', 
       },
       {
         protocol: 'https',
-        hostname: 'www.google.com', // Using a wildcard for subdomains
+        hostname: 'www.google.com',
       },
     ],
   },
