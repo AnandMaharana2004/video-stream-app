@@ -128,9 +128,21 @@ function Navbar() {
     return (
         <>
             {/* Navbar */}
-            <div className="w-full flex items-center justify-between px-6 py-4 bg-zinc-900 text-white sticky top-0 z-20">
-                <Link href={"/videos"} >
-                    <h2 className="text-xl font-bold" >Stream-Hub</h2>
+            <div className="w-full flex items-center justify-between px-6 py-4  text-white sticky top-0 z-20">
+                <Link href={"/videos"} className="flex items-center gap-0">
+                    {/* The Image component for the logo */}
+                    <Image
+                        src="/logo.ico"
+                        alt="Stream-Hub Logo"
+                        width={30}
+                        height={30}
+                        className='rounded-full'
+                    />
+                    <div className='flex'>
+
+                        <h2 className="text-xl font-bold text-[#0fafd2]" >Stream-</h2>
+                        <h2 className="text-xl font-bold text-[#ffffff]" >Hub</h2>
+                    </div>
                 </Link>
                 <div className='flex gap-4 items-center'>
                     <Link href={"/upload"}> Uploads</Link>
@@ -281,4 +293,4 @@ function Navbar() {
     )
 }
 
-export  {Navbar};
+export { Navbar };

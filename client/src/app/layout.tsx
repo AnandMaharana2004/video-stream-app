@@ -13,8 +13,18 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Stream-Hub",
-  description: "A video streaming applicaton",
+  title: "Stream-Hub | Watch & Upload Videos in Adaptive Streaming",
+  description:
+    "Stream-Hub is a next-gen video streaming platform where users can upload and watch videos in adaptive bitrate streaming. Enjoy smooth playback in the resolution you want — from HD to 4K.",
+
+  alternates: {
+    canonical: "https://video-stream-app-43vc.vercel.app",
+  },
+  icons: {
+    icon: "/logo.ico",        // default favicon
+    shortcut: "/logo.ico",    // for old browsers
+    // apple: "/logo.png",       // for Apple devices
+  },
 };
 
 export default function RootLayout({
