@@ -128,7 +128,7 @@ function Navbar() {
     return (
         <>
             {/* Navbar */}
-            <div className="w-full flex items-center justify-between px-6 py-4  text-white sticky top-0 z-20">
+            <div className="w-full flex items-center justify-between px-6 py-4 bg-black text-white sticky top-0 z-20">
                 <Link href={"/videos"} className="flex items-center gap-0">
                     {/* The Image component for the logo */}
                     <Image
