@@ -128,20 +128,20 @@ function Navbar() {
     return (
         <>
             {/* Navbar */}
-            <div className="w-full flex items-center justify-between px-6 py-4 bg-black text-white sticky top-0 z-20">
+            <div className="w-full flex items-center justify-between lg:px-6 px-2 py-4 bg-black text-white sticky top-0 z-20">
                 <Link href={"/videos"} className="flex items-center gap-0">
                     {/* The Image component for the logo */}
                     <Image
                         src="/logo.ico"
                         alt="Stream-Hub Logo"
-                        width={30}
-                        height={30}
+                        width={25}
+                        height={25}
                         className='rounded-full'
                     />
                     <div className='flex'>
 
-                        <h2 className="text-xl font-bold text-[#0fafd2]" >Stream-</h2>
-                        <h2 className="text-xl font-bold text-[#ffffff]" >Hub</h2>
+                        <h2 className="lg:text-xl text-lg font-bold text-[#0fafd2]" >Stream-</h2>
+                        <h2 className="lg:text-xl text-lg font-bold text-[#ffffff]" >Hub</h2>
                     </div>
                 </Link>
                 <div className='flex gap-4 items-center'>
