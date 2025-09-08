@@ -1,12 +1,11 @@
 "use server";
 
-// import { auth } from "@/auth";
-
 import { z } from "zod";
 import { Video } from "@/models/videoModel";
 import { connectTODB } from "@/utils/dbConnection";
 import { User } from "@/models/userModel";
 import { generateUrlForUploadFileOnS3 } from "@/aws/setup";
+import { auth } from "@/auth";
 
 // Validate input
 const videofileMetadataSchema = z.object({
@@ -37,15 +36,11 @@ export async function UploadFileController(
 ) {
 
     try {
-        // const session = await auth()
-        // if (!session || !session.user) {
-        //   throw new Error("Unauthorized");
-        // }
-        const email = "anandmaharana427@gmail.com"
-        // const name = "Anand Maharana"
-        // const email = session.user.email
-        // const name = session.user.name
-        // if (!name || !email) throw new Error("Unauthorized");
+        const session = await auth()
+        if (!session || !session.user) {
+          throw new Error("Unauthorized user");
+        }
+        const email = session.user.email
 
         const parsed = videofileMetadataSchema.safeParse({ fileName, fileSize, fileType });
         if (!parsed.success) throw new Error("Invalid file metadata");
