@@ -123,7 +123,7 @@ export async function getUserInfo(userID: string) {
         return {
             userID,
             userName: user.username,
-            profilePic: "https://lh3.googleusercontent.com/ogw/AF2bZyjSDEA0RHfwdkGiSl0SBlfWZI0yHFeQPmLKJ3YVw0q-Xj0=s64-c-mo",
+            profilePic: `${user?.profilePic}`,
             numberOfVideos,
         };
     } catch (error: unknown) {
@@ -170,30 +170,21 @@ export async function RefresshVideo(videoID: string) {
 }
 
 export async function getVideoInfo(videoID: string) {
-    // this function return the videos metadata and the .m3u8file also 
-    // for this we will use aggrigate and fetch data like 
-    // {
-    //     videoId ,
-    //     videosUrl : .m3u8
-    //     thatmdilUrl, 
-    //     User name, 
-    //     userprofilePic, 
-    //     // recomand videos [] in future 
-    // }
-
     try {
         await connectTODB()
         const videoId = new mongoose.Types.ObjectId(videoID)
 
         const video = await Video.findById(videoId)
         if (!video) throw Error("Invalid Video Id please provide proper video id ")
-
+        const user = await User.findById(video.author)
+        if (!user) throw Error("Invaid User id or user not found")
+        const userprofilePic = user?.profilePic || `https://api.dicebear.com/9.x/initials/svg?seed=${user.username.split(" ").join("+")}`
         return {
             videoId: video._id,
             videoUrl: `https://${video.cloudFrontUrl}`,
             thamdilUrl: `https://d11wd0j17w56pr.cloudfront.net/${encodeURIComponent(video.thamdilPicUrl)}`,
-            User: "Anand Maharana",
-            userprofilePic: "https://lh3.googleusercontent.com/ogw/AF2bZyjSDEA0RHfwdkGiSl0SBlfWZI0yHFeQPmLKJ3YVw0q-Xj0=s64-c-mo",
+            User: `${user.username}`,
+            userprofilePic: `${userprofilePic}`,
             descripton: `${video.description}`,
             title: `${video.title}`
         }
@@ -222,8 +213,8 @@ export async function deleteVideo(videoID: string) {
         if (status === "completed" || status === "uploading" || status === "failed") {
             // then delte the file
             if (video.cloudFrontUrl) {
-               const [_, hlsKey, __] = video.cloudFrontUrl.split("/")
-               console.log(_,__)
+                const [_, hlsKey, __] = video.cloudFrontUrl.split("/")
+                console.log(_, __)
                 const fullHlskey = `permanent/hls/${hlsKey}/`;
                 const thamdilKey = `permanent/thumbnail-images/${video.thamdilPicUrl}`
                 const bucket = process.env.TEMPORARY_BUCKET

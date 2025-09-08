@@ -50,6 +50,9 @@ userSchema.pre("save", async function (next) {
         const hasPassword = await bcrypt.hash(this.password || "", 10)
         this.password = hasPassword
     }
+    if (!this.profilePic) {
+        this.profilePic = `https://api.dicebear.com/9.x/initials/svg?seed=${this.username?.split(" ").join("+")}`;
+    }
     next()
 })
 export const User = models?.VideoTransCodeUser || model<IUser>('VideoTransCodeUser', userSchema);

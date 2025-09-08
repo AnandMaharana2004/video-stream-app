@@ -17,6 +17,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'www.google.com', // Using a wildcard for subdomains
       },
+      {
+        protocol: 'https',
+        hostname: 'api.dicebear.com',  //https://api.dicebear.com/9.x/initials/svg?seed=anand%20maharana
+      },
     ],
   },
 };
