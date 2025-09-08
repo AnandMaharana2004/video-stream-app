@@ -123,7 +123,7 @@ export async function getUserInfo(userID: string) {
         return {
             userID,
             userName: user.username,
-            profilePic: "https://lh3.googleusercontent.com/ogw/AF2bZyjSDEA0RHfwdkGiSl0SBlfWZI0yHFeQPmLKJ3YVw0q-Xj0=s64-c-mo",
+            profilePic: `${user?.profilePic}`,
             numberOfVideos,
         };
     } catch (error: unknown) {
