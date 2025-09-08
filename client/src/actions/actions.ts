@@ -15,55 +15,63 @@ export interface IReturnVideoData {
     autoherName: string;
 }
 
+// export async function GetVideos(): Promise<IReturnVideoData[]> {
+//     await connectTODB()
+//     const videos = await Video.find({ status: "completed" })
+
+//     // use aggrigaton pipeline here and get inforrmaton
+
+//     const returnData = videos.map((video) => {
+//         return {
+//             videoId: `${video._id}`,
+//             videoTitle: `${video.title}`,
+//             videoDescription: `${video.description}`,
+//             videoUrl: `${video.cloudFrontUrl}`,
+//             thamdilUrl: `https://d11wd0j17w56pr.cloudfront.net/${encodeURIComponent(video.thamdilPicUrl)}`,
+//             autoherName: `Anand Maharana`
+//         }
+//     })
+//     return returnData;
+// }
+
 export async function GetVideos(): Promise<IReturnVideoData[]> {
-    await connectTODB()
-    const videos = await Video.find({ status: "completed" })
-    // console.log("videos : ", videos)
-    const returnData = videos.map((video) => {
-        return {
-            videoId: `${video._id}`,
-            videoTitle: `${video.title}`,
-            videoDescription: `${video.description}`,
-            videoUrl: `${video.cloudFrontUrl}`,
-            thamdilUrl: `https://d11wd0j17w56pr.cloudfront.net/${encodeURIComponent(video.thamdilPicUrl)}`,
-            autoherName: "Anand Maharana"
+    await connectTODB();
+
+    const videos = await Video.aggregate([
+        {
+            $match: {
+                status: "Completed",
+                isPublic: true
+            }
+        },
+        {
+            $lookup: {
+                from: "videotranscodeusers",
+                localField: "author",
+                foreignField: "_id",
+                as: "authorDetails"
+            }
+        },
+        {
+            $unwind: "$authorDetails"
+        },
+        {
+            $project: {
+                _id: 0,
+                videoId: "$_id",
+                videoTitle: "$title",
+                videoDescription: "$description",
+                videoUrl: "$cloudFrontUrl",
+                thamdilUrl: {
+                    $concat: ["https://d11wd0j17w56pr.cloudfront.net/", "$thamdilPicUrl"]
+                },
+                authorName: "$authorDetails.username",
+                // authorProfilePic: "$authorDetails.profilePic"
+            }
         }
-    })
-    // const returnData: IReturnVideoData[] = [
-    //     {
-    //         videoId: "ertyuiuytrewsdfghjkhgfdw11111",
-    //         videoTitle: "this is the test data",
-    //         videoDescription: "any video description",
-    //         videoUrl: "this contain the master.m3u8 file url",
-    //         thamdilUrl: "https://d11wd0j17w56pr.cloudfront.net/68a4836b4775c5ef74d6e773-WhatsApp%20Image%202025-05-25%20at%2010.25.45%20PM.jpeg",
-    //         autoherName: "Anand Maharana"
-    //     },
-    //     {
-    //         videoId: "ertyuiuytrewsdfghjkhgfdw22222",
-    //         videoTitle: "this is the test data",
-    //         videoDescription: "any video description",
-    //         videoUrl: "this contain the master.m3u8 file url",
-    //         thamdilUrl: "https://i.ytimg.com/vi/9zZfabSup8c/hq720.jpg",
-    //         autoherName: "Anand Maharana"
-    //     },
-    //     {
-    //         videoId: "ertyuiuytrewsdfghjkhgfdw33333",
-    //         videoTitle: "this is the test data",
-    //         videoDescription: "any video description",
-    //         videoUrl: "this contain the master.m3u8 file url",
-    //         thamdilUrl: "https://i.ytimg.com/vi/1OAjeECW90E/hqdefault.jpg",
-    //         autoherName: "Anand Maharana"
-    //     },
-    //     {
-    //         videoId: "ertyuiuytrewsdfghjkhgfdw44444",
-    //         videoTitle: "this is the test data",
-    //         videoDescription: "any video description",
-    //         videoUrl: "this contain the master.m3u8 file url",
-    //         thamdilUrl: "https://i.ytimg.com/vi/gvhVtaEA1z8/hq720.jpg",
-    //         autoherName: "Anand Maharana"
-    //     }
-    // ];
-    return returnData;
+    ]);
+
+    return videos as IReturnVideoData[];
 }
 
 export async function GetUserVideos(authorID: string) {
